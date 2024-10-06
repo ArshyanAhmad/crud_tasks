@@ -1,12 +1,19 @@
 import User from "../models/userModel.js";
 import bcrypt from "bcryptjs"
 import { sendCookie } from "../utils/features.js";
-
+import jwt from "jsonwebtoken";
 
 export const register = async (req, res) => {
     try {
         // Extracting name, email, and password from the request body
         const { name, email, password } = req.body;
+
+        if (password.length <= 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 6 characters long"
+            })
+        }
 
         // Checking if the user already exists by looking for the email in the database
         let user = await User.findOne({ email });
@@ -74,5 +81,39 @@ export const login = async (req, res) => {
             success: false,
             message: "Failed to login due to internal server error"
         });
+    }
+}
+
+
+export const logout = async (req, res) => {
+    try {
+
+        const { token } = req.cookies;
+
+        if (!token) {
+            return res.status(404).json({
+                success: false,
+                message: "Token Not Found! Login First"
+            })
+        }
+
+        const userId = jwt.decode(token, process.env.JWT_SECRET);
+        let user = await User.findById(userId);
+
+        res.status(200).cookie("token", "", {
+            httpOnly: true,
+            expires: new Date(Date.now())
+        }).json({
+            success: true,
+            message: `${user.name}, logout successfully`
+        })
+        
+    }
+    catch (error) {
+        console.log("Internal Server Error ", error.message);
+        res.status(400).json({
+            success: false,
+            message: "Error while logout the user"
+        })
     }
 }
