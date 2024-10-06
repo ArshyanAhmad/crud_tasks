@@ -1,4 +1,4 @@
-import User from "../models/userModel.js";
+import { User } from "../models/userModel.js";
 import bcrypt from "bcryptjs"
 import { sendCookie } from "../utils/features.js";
 import jwt from "jsonwebtoken";
@@ -48,7 +48,6 @@ export const register = async (req, res) => {
     }
 }
 
-
 export const login = async (req, res) => {
     try {
 
@@ -84,36 +83,24 @@ export const login = async (req, res) => {
     }
 }
 
+export const logout = (req, res) => {
 
-export const logout = async (req, res) => {
-    try {
+    res.status(200).cookie("token", "", {
+        httpOnly: true,
+        expires: new Date(Date.now())
+    }).json({
+        success: true,
+        message: `${req.user.name}, Logout successfully`
+    })
 
-        const { token } = req.cookies;
+}
 
-        if (!token) {
-            return res.status(404).json({
-                success: false,
-                message: "Token Not Found! Login First"
-            })
-        }
+export const getMyProfile = (req, res) => {
 
-        const userId = jwt.decode(token, process.env.JWT_SECRET);
-        let user = await User.findById(userId);
+    res.status(200).json({
+        success: true,
+        message: `My Profile`,
+        user: req.user
+    })
 
-        res.status(200).cookie("token", "", {
-            httpOnly: true,
-            expires: new Date(Date.now())
-        }).json({
-            success: true,
-            message: `${user.name}, logout successfully`
-        })
-        
-    }
-    catch (error) {
-        console.log("Internal Server Error ", error.message);
-        res.status(400).json({
-            success: false,
-            message: "Error while logout the user"
-        })
-    }
 }
